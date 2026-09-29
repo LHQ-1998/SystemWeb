@@ -1,0 +1,147 @@
+{
+  "apps": [
+    {
+      "id": "mx-dashboard",
+      "name": "MX看板",
+      "description": "标准机看板",
+      "page": "标准机数据看板",
+      "kind": "systemd",
+      "unit": "mx-dashboard.service",
+      "port": 8090,
+      "links": [
+        {
+          "label": "打开看板",
+          "href": "http://{host}:8090/"
+        }
+      ],
+      "note": "",
+      "icon": "/static/icons/mx-dashboard.png"
+    },
+    {
+      "id": "mystic-api",
+      "name": "Mystic 接口",
+      "description": "情绪 API",
+      "page": "健康检查 /api/health",
+      "kind": "systemd",
+      "unit": "mystic-api.service",
+      "port": 58130,
+      "links": [
+        {
+          "label": "本机接口",
+          "href": "http://{host}:58130/api/health"
+        },
+        {
+          "label": "域名接口",
+          "href": "https://lihaiquan.cn/api/health"
+        }
+      ]
+    },
+    {
+      "id": "th-server",
+      "name": "温湿度服务",
+      "description": "温湿度 HTTP 服务",
+      "page": "MULTISTACK T&H",
+      "kind": "systemd",
+      "unit": "th-server.service",
+      "port": 60000,
+      "links": [
+        {
+          "label": "打开页面",
+          "href": "http://{host}:60000/"
+        }
+      ]
+    },
+    {
+      "id": "site-total",
+      "name": "站点统计",
+      "description": "站点访问统计",
+      "page": "后台采集进程",
+      "kind": "systemd",
+      "unit": "site_total.service",
+      "note": "只写访问日志，没有单独网页。"
+    },
+    {
+      "id": "frps",
+      "name": "FRP 服务端",
+      "description": "内网穿透服务端",
+      "page": "frps 通信端口 7000",
+      "kind": "systemd",
+      "unit": "frps.service",
+      "port": 7000,
+      "note": "给客户端连接用，没有控制台网页。"
+    },
+    {
+      "id": "zerotier-web",
+      "name": "ZeroTier 控制台",
+      "description": "ZeroTier 控制器网页",
+      "page": "登录 · ZeroTier 控制器",
+      "kind": "systemd",
+      "unit": "zerotier-controller-web.service",
+      "port": 8085,
+      "links": [
+        {
+          "label": "打开控制台",
+          "href": "http://{host}:8085/login.html"
+        }
+      ]
+    },
+    {
+      "id": "zerotier-one",
+      "name": "ZeroTier",
+      "description": "ZeroTier 虚拟网络",
+      "page": "本机 API 9993",
+      "kind": "systemd",
+      "unit": "zerotier-one.service",
+      "port": 9993,
+      "note": "本地接口需要令牌，浏览器直接打开会返回未授权。"
+    },
+    {
+      "id": "emqx",
+      "name": "EMQX",
+      "description": "MQTT 消息服务",
+      "page": "EMQX Dashboard",
+      "kind": "systemd",
+      "unit": "emqx.service",
+      "port": 1883,
+      "note": "设备连接走 MQTT 1883。",
+      "links": [
+        {
+          "label": "打开控制台",
+          "href": "http://{host}:18083/"
+        }
+      ]
+    },
+    {
+      "id": "system-mgn",
+      "name": "设备管理",
+      "description": "设备管理后台，由 PM2 托管",
+      "page": "机组管理平台",
+      "kind": "pm2",
+      "pm2": "system-mgn",
+      "port": 4173,
+      "links": [
+        {
+          "label": "打开后台",
+          "href": "http://{host}:4173/"
+        }
+      ],
+      "note": "",
+      "icon": "/static/icons/system-mgn.png"
+    },
+    {
+      "id": "codelog",
+      "name": "CodeLog",
+      "description": "代码日志服务，由 PM2 托管",
+      "page": "机组激活码管理系统",
+      "kind": "pm2",
+      "pm2": "codelog",
+      "port": 3080,
+      "links": [
+        {
+          "label": "打开系统",
+          "href": "http://{host}:3080/"
+        }
+      ]
+    }
+  ]
+}

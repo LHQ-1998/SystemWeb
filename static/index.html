@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="night">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>服务面板</title>
+  <style>
+    :root, [data-theme="light"] {
+      --bg0: #e7eef8; --bg1: #d5e2f6;
+      --blob-a: rgba(126, 170, 255, 0.55); --blob-b: rgba(196, 160, 255, 0.38); --blob-c: rgba(120, 220, 190, 0.28);
+      --glass: rgba(255, 255, 255, 0.38); --glass-2: rgba(255, 255, 255, 0.62);
+      --line: rgba(255, 255, 255, 0.72); --text: #1b2430; --muted: #5d6c80;
+      --shadow: 0 18px 50px rgba(70, 100, 150, 0.16); --shine: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      --btn: rgba(255, 255, 255, 0.46); --btn-text: #1b2430; --accent: #2f62b5; --link: #1d4f96;
+      --green: #1f8f55; --red: #c44747; --amber: #a56b12; --chip: rgba(255, 255, 255, 0.4);
+      --bar: rgba(47, 98, 181, 0.85);
+    }
+    [data-theme="night"] {
+      --bg0: #0d131c; --bg1: #172233;
+      --blob-a: rgba(88, 130, 255, 0.38); --blob-b: rgba(120, 90, 220, 0.28); --blob-c: rgba(70, 200, 170, 0.16);
+      --glass: rgba(16, 24, 38, 0.46); --glass-2: rgba(22, 32, 50, 0.62);
+      --line: rgba(255, 255, 255, 0.16); --text: #eef3f8; --muted: #9aabbf;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.38); --shine: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      --btn: rgba(255, 255, 255, 0.1); --btn-text: #eef3f8; --accent: #9ec0ff; --link: #b7d2ff;
+      --green: #5ee0a0; --red: #ff8d8d; --amber: #f0c36a; --chip: rgba(255, 255, 255, 0.08);
+      --bar: #8eb6ff;
+    }
+    [data-theme="eye"] {
+      --bg0: #d5e2c6; --bg1: #c6d4b4;
+      --blob-a: rgba(186, 206, 150, 0.7); --blob-b: rgba(232, 214, 164, 0.55); --blob-c: rgba(168, 196, 176, 0.4);
+      --glass: rgba(246, 242, 226, 0.42); --glass-2: rgba(248, 244, 230, 0.66);
+      --line: rgba(255, 250, 236, 0.62); --text: #2a3324; --muted: #5c6a52;
+      --shadow: 0 16px 40px rgba(70, 90, 50, 0.12); --shine: inset 0 1px 0 rgba(255, 252, 236, 0.75);
+      --btn: rgba(255, 250, 236, 0.48); --btn-text: #2a3324; --accent: #3f6a32; --link: #2f5528;
+      --green: #2f7a45; --red: #a33b3b; --amber: #8a6418; --chip: rgba(255, 250, 236, 0.38);
+      --bar: #4d7a3e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      font: 15px/1.5 "Segoe UI", "PingFang SC", "Noto Sans SC", sans-serif;
+      background: linear-gradient(160deg, var(--bg0), var(--bg1));
+    }
+    body::before, body::after {
+      content: ""; position: fixed; z-index: -1; border-radius: 50%; filter: blur(30px); pointer-events: none;
+    }
+    body::before { width: 46vw; height: 46vw; left: -8vw; top: -12vw; background: var(--blob-a); }
+    body::after { width: 38vw; height: 38vw; right: -8vw; top: 8vh; background: var(--blob-b); }
+    .shell { display: grid; grid-template-columns: 228px 1fr; min-height: 100vh; }
+    .side {
+      position: sticky; top: 0; height: 100vh; padding: 22px 14px;
+      display: flex; flex-direction: column; gap: 8px;
+      background: var(--glass); border-right: 1px solid var(--line);
+      backdrop-filter: blur(22px) saturate(1.4); box-shadow: var(--shine);
+    }
+    .brand { font-size: 20px; font-weight: 700; padding: 6px 10px 14px; }
+    .brand small { display: block; color: var(--muted); font-size: 12px; font-weight: 500; }
+    .navbtn, .theme, .filter, .chip, button.act, button.log, button.back {
+      border: 1px solid var(--line); background: var(--chip); color: var(--text);
+      border-radius: 12px; box-shadow: var(--shine); font: inherit; cursor: pointer;
+    }
+    .navbtn { text-align: left; padding: 10px 12px; }
+    .navbtn.active, .filter.active { background: var(--glass-2); border-color: var(--accent); color: var(--accent); }
+    .side .theme { margin-top: auto; padding: 8px 12px; }
+    .content { padding: 28px 28px 56px; }
+    h1 { margin: 0; font-size: 28px; }
+    .sub { margin: 6px 0 16px; color: var(--muted); }
+    .view { display: none; }
+    .view.on { display: block; }
+    .stats, .grid { display: grid; gap: 14px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+    .chart.donut { width: 168px; margin: 6px auto 0; }
+    .temp-row { display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; margin-top: 8px; }
+    .temp-gauge { width: 148px; text-align: center; }
+    .temp-gauge .chart.donut { width: 132px; margin: 0 auto; }
+    .temp-name { margin-top: 4px; font-size: 13px; }
+    .span-2 { grid-column: 1 / -1; }
+    .disk-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .disk-pie { flex: 1 1 280px; max-width: 480px; }
+    .disk-pie svg { overflow: visible; }
+    .hbars { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .hbar { display: grid; grid-template-columns: minmax(88px, 38%) minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; }
+    .hbar-label { line-height: 1.3; word-break: break-all; }
+    .hbar-track { height: 10px; border-radius: 99px; background: var(--chip); }
+    .hbar-track i { display: block; height: 100%; border-radius: 99px; }
+    .hbar-val { white-space: nowrap; }
+    .legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--muted); }
+    .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+    .panel, .card {
+      background: var(--glass); border: 1px solid var(--line); border-radius: 20px;
+      padding: 16px; box-shadow: var(--shadow), var(--shine);
+      backdrop-filter: blur(22px) saturate(1.45);
+    }
+    .panel h2, .card h2 { margin: 0; font-size: 14px; }
+    .metric { font-size: 18px; font-weight: 700; margin: 2px 0; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .bar { height: 8px; border-radius: 99px; background: var(--chip); overflow: hidden; margin-top: 8px; }
+    .bar > i { display: block; height: 100%; background: var(--bar); }
+    .row { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 13px; }
+    .filters { display: flex; gap: 8px; margin-bottom: 14px; }
+    .filter, .chip { border-radius: 999px; padding: 6px 12px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+    .card { cursor: pointer; }
+    .card:hover { background: var(--glass-2); }
+    .card-head { display: grid; grid-template-columns: 84px 1fr; gap: 14px; align-items: center; }
+    .icon {
+      width: 84px; height: 84px; border-radius: 24px; display: grid; place-items: center;
+      color: var(--accent); background: var(--btn); border: 1px solid var(--line); box-shadow: var(--shine);
+    }
+    .icon svg { width: 48px; height: 48px; }
+    .icon.brand { background: transparent; border-color: transparent; box-shadow: none; }
+    .icon.brand img, .icon img { width: 72px; height: 72px; object-fit: contain; display: block; }
+    .card-top { display: flex; justify-content: space-between; gap: 8px; }
+    .desc { color: var(--muted); font-size: 13px; margin: 4px 0; }
+    .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+    .running .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .failed .dot { background: var(--red); }
+    .starting .dot, .stopping .dot { background: var(--amber); }
+    .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    button.act, button.log { padding: 8px 10px; color: var(--btn-text); background: var(--btn); font-weight: 650; }
+    button.log { margin-left: auto; color: var(--accent); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .stack { display: flex; flex-direction: column; gap: 16px; }
+    .cfg-board { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
+    .cfg-card { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+    .cfg-card .card-lead { min-height: 40px; margin: 6px 0 0; }
+    .cfg-card > .actions { margin-top: auto; }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 4px; }
+    input, textarea, select {
+      width: 100%; border: 1px solid var(--line); background: var(--btn); color: var(--text);
+      border-radius: 12px; padding: 8px 10px; font: inherit;
+    }
+    textarea { min-height: 72px; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    .fields .wide { grid-column: 1 / -1; }
+    .checks { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+    .checks label { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--text); }
+    .checks input { width: auto; }
+    .search-row { display: flex; gap: 8px; align-items: center; }
+    .search-row input { flex: 1; min-width: 0; width: auto; }
+    .unit-list { height: 248px; overflow: auto; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-right: 4px; }
+    .unit-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      width: 100%; text-align: left; padding: 8px 10px; border-radius: 12px;
+      border: 1px solid transparent; background: transparent; color: var(--text); font: inherit; cursor: pointer;
+    }
+    .unit-row:hover, .unit-row.picked { background: var(--glass-2); }
+    .unit-row.picked { border-color: var(--accent); }
+    .unit-row small { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .tool-row { display: flex; gap: 8px; align-items: center; min-height: 40px; margin-top: 10px; }
+    .tool-row input { flex: 1; min-width: 0; width: auto; }
+    .tool-row .actions { margin-top: 0; margin-left: auto; }
+    pre {
+      margin: 8px 0 0; max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+      font: 12px/1.55 ui-monospace, Menlo, Consolas, monospace;
+    }
+    #unit-preview {
+      height: 248px; max-height: 248px; margin-top: 10px; overflow: auto; white-space: pre; word-break: normal;
+      background: var(--btn); border: 1px solid var(--line); border-radius: 14px; padding: 12px;
+    }
+    .cfg-pass { min-height: 0; }
+    .cfg-pass .pass-line { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+    .cfg-pass .actions { margin-top: 0; }
+    .mask {
+      position: fixed; inset: 0; background: rgba(12, 16, 22, 0.4);
+      display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20;
+    }
+    #mask { z-index: 30; }
+    .mask.open { display: flex; }
+    .modal {
+      width: min(860px, 100%); max-height: min(80vh, 760px); overflow: auto;
+      background: var(--glass-2); border: 1px solid var(--line); border-radius: 20px;
+      box-shadow: var(--shadow), var(--shine); backdrop-filter: blur(24px);
+    }
+    .detail-modal, .login-modal { width: min(520px, 100%); }
+    .modal header, .modal .body { padding: 14px 16px; }
+    .modal header { display: flex; justify-content: space-between; align-items: center; }
+    .facts { display: grid; grid-template-columns: 76px 1fr; gap: 6px 8px; font-size: 13px; }
+    .facts dt { color: var(--muted); } .facts dd { margin: 0; word-break: break-all; }
+    a.link {
+      display: block; margin-top: 8px; padding: 8px 10px; border-radius: 12px; color: var(--link);
+      text-decoration: none; background: var(--btn); border: 1px solid var(--line); word-break: break-all;
+    }
+    .toast {
+      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: none;
+      background: var(--glass-2); border: 1px solid var(--line); padding: 10px 14px; border-radius: 14px;
+      z-index: 40; max-width: min(520px, calc(100% - 32px));
+    }
+    @media (max-width: 980px) {
+      .cfg-board, .fields, .cfg-pass .pass-line { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 800px) {
+      .shell { grid-template-columns: 1fr; }
+      .side { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; }
+      .side .theme { margin-top: 0; }
+      .content { padding: 18px 14px 40px; }
+      .stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="side">
+      <div class="brand">服务面板<small>systemd 版</small></div>
+      <button class="navbtn active" data-view="overview" type="button">概览</button>
+      <button class="navbtn" data-view="services" type="button">服务</button>
+      <button class="navbtn" data-view="config" type="button">配置</button>
+      <button class="theme" id="theme-toggle" type="button">夜间</button>
+    </aside>
+    <main class="content">
+      <section class="view on" id="view-overview">
+        <h1>设备状态</h1>
+        <p class="sub" id="overview-sub">正在读取本机动态…</p>
+        <div class="stats" id="overview"></div>
+      </section>
+      <section class="view" id="view-services">
+        <h1>服务</h1>
+        <p class="sub">点卡片查看信息和访问链接。启停需要配置页密码。</p>
+        <div class="filters">
+          <button class="filter active" data-filter="all" type="button">全部</button>
+          <button class="filter" data-filter="running" type="button">运行中</button>
+          <button class="filter" data-filter="down" type="button">未运行</button>
+        </div>
+        <div class="grid" id="grid"></div>
+      </section>
+      <section class="view" id="view-config">
+        <h1>配置</h1>
+        <p class="sub">导入、新建和修改服务都要先登录。</p>
+        <div id="config"></div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+  <div class="mask" id="detail-mask">
+    <div class="modal detail-modal">
+      <header>
+        <h3 id="detail-title">应用</h3>
+        <button class="log" id="detail-close" type="button">关闭</button>
+      </header>
+      <div class="body" id="detail-body"></div>
+    </div>
+  </div>
+  <div class="mask" id="mask">
+    <div class="modal">
+      <header>
+        <h3 id="log-title">日志</h3>
+        <div>
+          <button class="act" id="log-refresh" type="button">刷新</button>
+          <button class="log" id="log-close" type="button">关闭</button>
+        </div>
+      </header>
+      <pre id="log-body"></pre>
+    </div>
+  </div>
+  <div class="mask" id="login-mask">
+    <form class="modal login-modal" id="login-form">
+      <header><h3>配置登录</h3></header>
+      <div class="body">
+        <label>密码</label>
+        <input id="login-password" type="password" autocomplete="current-password">
+        <div class="actions">
+          <button class="act" type="submit">登录</button>
+          <button class="log" id="login-cancel" type="button">取消</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <script>
+    const themes = [{id:"light",label:"明亮"},{id:"night",label:"夜间"},{id:"eye",label:"护眼"}];
+    const stateLabels = {running:"运行中",stopped:"已停止",failed:"失败",starting:"启动中",stopping:"停止中",exited:"已退出",unknown:"未知"};
+    const iconPaths = {
+      "mx-dashboard": '<path d="M4 19V10M10 19V5M16 19v-7M22 19V8"/>',
+      "mystic-api": '<path d="M12 3l1.6 4.8L18.5 9.5 13.6 11 12 16l-1.6-5L6.5 9.5 10.4 7.8z"/>',
+      "th-server": '<path d="M10 14.5a4 4 0 1 0 4-4H12"/><path d="M12 4v8"/>',
+      "site-total": '<path d="M12 3a9 9 0 1 0 9 9h-9z"/>',
+      "system-mgn": '<rect x="4" y="3" width="16" height="6" rx="1.5"/><rect x="4" y="11" width="16" height="6" rx="1.5"/>',
+      "codelog": '<path d="M8 8 4 12l4 4M16 8l4 4-4 4M13 6l-2 12"/>'
+    };
+    const brandIcons = {frps:"/static/frp.svg",emqx:"/static/emqx.svg","zerotier-web":"/static/zerotier.svg","zerotier-one":"/static/zerotier.svg"};
+    let apps = [], filter = "all", detailId = null, logId = null, authed = false, view = "overview";
+    let previewUnitName = "";
+
+    function themeById(id) { return themes.find(item => item.id === id) || themes[1]; }
+    function applyTheme(id) {
+      const current = themeById(id);
+      document.documentElement.dataset.theme = current.id;
+      localStorage.setItem("app-cards-theme", current.id);
+      document.getElementById("theme-toggle").textContent = current.label;
+    }
+    applyTheme(localStorage.getItem("app-cards-theme") || "night");
+    document.getElementById("theme-toggle").onclick = () => {
+      const current = themeById(document.documentElement.dataset.theme);
+      applyTheme(themes[(themes.indexOf(current) + 1) % themes.length].id);
+    };
+    function toast(text) {
+      const el = document.getElementById("toast");
+      el.textContent = text; el.style.display = "block";
+      clearTimeout(toast._t); toast._t = setTimeout(() => { el.style.display = "none"; }, 3200);
+    }
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+    }
+    function hostHref(href) { return String(href || "").split("{host}").join(location.hostname); }
+    function bytes(n) {
+      if (n == null || Number.isNaN(n)) return "—";
+      const u = ["B","KB","MB","GB","TB"]; let i = 0, v = Number(n);
+      while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+      return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${u[i]}`;
+    }
+    function rate(n) { return n == null ? "采集中" : `${bytes(n)}/s`; }
+    function duration(sec) {
+      const s = Math.floor(sec), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+      return `${d} 天 ${h} 小时 ${m} 分`;
+    }
+    async function api(url, options = {}) {
+      const res = await fetch(url, {headers:{"Content-Type":"application/json"}, ...options});
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) { authed = false; openLogin(); throw new Error(data.error || "请先登录"); }
+      if (!res.ok) throw new Error(data.error || "请求失败");
+      return data;
+    }
+    function iconHtml(app) {
+      const src = app.icon || brandIcons[app.id];
+      if (src) return `<img src="${escapeHtml(src)}" alt="">`;
+      const path = iconPaths[app.id] || '<circle cx="12" cy="12" r="7"/>';
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+    }
+    function showView(name) {
+      view = name;
+      document.querySelectorAll(".view").forEach(el => el.classList.toggle("on", el.id === "view-" + name));
+      document.querySelectorAll(".navbtn").forEach(el => el.classList.toggle("active", el.dataset.view === name));
+      if (name === "config") renderConfig();
+      if (name === "overview") loadOverview().catch(err => toast(err.message));
+      if (name === "services") loadApps().catch(err => toast(err.message));
+    }
+    document.querySelector(".side").addEventListener("click", event => {
+      const button = event.target.closest(".navbtn");
+      if (button) showView(button.dataset.view);
+    });
+
+    const palette = ["#5b8def", "#7c6cf0", "#3dcea0", "#f0a35b", "#e36b6b", "#5ec8e6"];
+    function seriesOf(history, key) { return (history || []).map(point => point[key]); }
+    function legend(items) {
+      return `<div class="legend">${items.map(item => `<span><i class="swatch" style="background:${item.color}"></i>${escapeHtml(item.label)}</span>`).join("")}</div>`;
+    }
+    function lineChart(series, maxValue) {
+      const w = 520, h = 168, pad = {l: 52, r: 12, t: 12, b: 18};
+      const values = series.flatMap(item => item.values.filter(value => value != null));
+      const max = maxValue || Math.max(1, ...values, 1);
+      const n = Math.max(2, ...series.map(item => item.values.length));
+      const x = i => pad.l + (w - pad.l - pad.r) * (n <= 1 ? 0.5 : i / (n - 1));
+      const y = value => pad.t + (h - pad.t - pad.b) * (1 - Math.min(value, max) / max);
+      const grid = [0, 0.5, 1].map(step => {
+        const yy = y(max * (1 - step));
+        const label = max >= 1000 ? bytes(max * (1 - step)) : (max * (1 - step)).toFixed(max > 10 ? 0 : 1);
+        return `<line x1="${pad.l}" y1="${yy}" x2="${w - pad.r}" y2="${yy}" stroke="currentColor" opacity="0.15"/>
+          <text x="${pad.l - 6}" y="${yy + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.6">${label}</text>`;
+      }).join("");
+      const paths = series.map(item => {
+        const pts = item.values.map((value, index) => value == null ? null : [x(index), y(value)]).filter(Boolean);
+        if (!pts.length) return "";
+        if (pts.length === 1) return `<circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="3.5" fill="${item.color}"/>`;
+        const d = pts.map((point, index) => `${index ? "L" : "M"}${point[0].toFixed(1)},${point[1].toFixed(1)}`).join(" ");
+        return `<path d="${d}" fill="none" stroke="${item.color}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+      }).join("");
+      return `<div class="chart line"><svg viewBox="0 0 ${w} ${h}">${grid}${paths}</svg></div>`;
+    }
+    function donut(parts, center) {
+      const total = parts.reduce((sum, part) => sum + part.value, 0) || 1;
+      const r = 68, c = 2 * Math.PI * r;
+      let offset = 0;
+      const arcs = parts.map(part => {
+        const len = Math.max(c * part.value / total, part.value ? 1 : 0);
+        const node = `<circle cx="100" cy="100" r="${r}" fill="none" stroke="${part.color}" stroke-width="24" stroke-dasharray="${len} ${c - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 100 100)"/>`;
+        offset += len;
+        return node;
+      }).join("");
+      return `<div class="chart donut"><svg viewBox="0 0 200 200">${arcs}<text x="100" y="104" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">${escapeHtml(center)}</text></svg></div>`;
+    }
+    function tempGauge(item, color) {
+      const max = 100;
+      const value = Math.max(0, Math.min(Number(item.celsius) || 0, max));
+      const r = 68, c = 2 * Math.PI * r, len = c * value / max;
+      const name = item.name || item.device;
+      return `<div class="temp-gauge"><div class="chart donut"><svg viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="${r}" fill="none" stroke="currentColor" stroke-width="24" opacity="0.12"/>
+        <circle cx="100" cy="100" r="${r}" fill="none" stroke="${color}" stroke-width="24" stroke-dasharray="${len} ${c - len}" transform="rotate(-90 100 100)"/>
+        <text x="100" y="98" text-anchor="middle" font-size="28" font-weight="700" fill="currentColor">${item.celsius}</text>
+        <text x="100" y="122" text-anchor="middle" font-size="13" fill="currentColor" opacity="0.7">°C</text>
+      </svg></div><div class="temp-name">${escapeHtml(name)}</div></div>`;
+    }
+    function diskTitle(disk) {
+      if (disk.target === "/") return "系统盘";
+      if (disk.target === "/data") return "数据盘";
+      return disk.target;
+    }
+    function diskPie(title, parts) {
+      const usable = parts.filter(part => part.value > 0);
+      const total = usable.reduce((sum, part) => sum + part.value, 0) || 1;
+      const w = 400, h = Math.max(250, 80 + usable.length * 28), cx = 200, cy = Math.round(h * 0.42), r = 62;
+      let angle = -Math.PI / 2;
+      const paths = [];
+      const calls = [];
+      usable.forEach(part => {
+        const sweep = part.value / total * Math.PI * 2;
+        const start = angle;
+        const mid = start + sweep / 2;
+        angle += sweep;
+        if (sweep >= Math.PI * 2 - 0.001) {
+          paths.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${part.color}"/>`);
+        } else if (sweep > 0.001) {
+          const x0 = cx + Math.cos(start) * r, y0 = cy + Math.sin(start) * r;
+          const x1 = cx + Math.cos(start + sweep) * r, y1 = cy + Math.sin(start + sweep) * r;
+          const large = sweep > Math.PI ? 1 : 0;
+          paths.push(`<path d="M${cx} ${cy} L${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z" fill="${part.color}" stroke="rgba(255,255,255,.55)" stroke-width="1.4"/>`);
+        }
+        calls.push({
+          right: Math.cos(mid) >= 0,
+          sx: cx + Math.cos(mid) * (r + 1),
+          sy: cy + Math.sin(mid) * (r + 1),
+          ex: cx + Math.cos(mid) * (r + 16),
+          ey: cy + Math.sin(mid) * (r + 16),
+          y: cy + Math.sin(mid) * (r + 16),
+          color: part.color,
+          label: part.label
+        });
+      });
+      [true, false].forEach(side => {
+        const group = calls.filter(item => item.right === side).sort((a, b) => a.y - b.y);
+        for (let i = 1; i < group.length; i++) if (group[i].y < group[i - 1].y + 18) group[i].y = group[i - 1].y + 18;
+        for (let i = group.length - 2; i >= 0; i--) if (group[i].y > group[i + 1].y - 18) group[i].y = group[i + 1].y - 18;
+        group.forEach(item => { item.y = Math.max(16, Math.min(h - 42, item.y)); });
+      });
+      const lines = calls.map(item => {
+        const textX = item.right ? 292 : 108;
+        const elbow = item.right ? textX - 8 : textX + 8;
+        return `<polyline points="${item.sx.toFixed(1)},${item.sy.toFixed(1)} ${item.ex.toFixed(1)},${item.ey.toFixed(1)} ${item.ex.toFixed(1)},${item.y.toFixed(1)} ${elbow},${item.y.toFixed(1)}" fill="none" stroke="${item.color}" stroke-width="1.3"/>
+          <circle cx="${item.sx.toFixed(1)}" cy="${item.sy.toFixed(1)}" r="2.3" fill="${item.color}"/>
+          <text x="${textX}" y="${(item.y + 4).toFixed(1)}" text-anchor="${item.right ? "start" : "end"}" font-size="12" fill="currentColor">${escapeHtml(item.label)}</text>`;
+      }).join("");
+      return `<div class="disk-pie"><svg viewBox="0 0 ${w} ${h}">${paths.join("")}${lines}<text x="${cx}" y="${h - 14}" text-anchor="middle" font-size="14" font-weight="650" fill="currentColor">${escapeHtml(title)}</text></svg></div>`;
+    }
+    function diskCharts(disks) {
+      const efi = disks.find(disk => disk.target === "/boot/efi");
+      const mains = disks.filter(disk => disk.target !== "/boot/efi" && disk.target !== "/boot");
+      const topColors = [palette[0], palette[1], palette[5]];
+      return `<div class="disk-row">${mains.map(disk => {
+        const free = Math.max(disk.total - disk.used, 0);
+        const parts = [];
+        let accounted = 0;
+        (disk.top || []).slice(0, 3).forEach((item, index) => {
+          const room = Math.max(disk.used - accounted, 0);
+          const value = Math.min(item.bytes, room);
+          if (value <= 0) return;
+          accounted += value;
+          parts.push({label: item.name + " " + bytes(item.bytes), value, color: topColors[index % topColors.length]});
+        });
+        const rest = Math.max(disk.used - accounted, 0);
+        if (rest > 0) parts.push({label: ((disk.top || []).length ? "其他已用 " : "已用 ") + bytes(rest), value: rest, color: palette[4]});
+        parts.push({label: "可用 " + bytes(free), value: free, color: palette[2]});
+        if (disk.target === "/" && efi) parts.push({label: "EFI " + bytes(efi.used) + " / " + bytes(efi.total), value: efi.total, color: palette[3]});
+        return diskPie(diskTitle(disk), parts);
+      }).join("")}</div>`;
+    }
+    function hbars(items) {
+      const max = Math.max(...items.map(item => item.max || item.value), 1);
+      return `<div class="hbars">${items.map(item => {
+        const width = Math.max(2, 100 * Math.min(item.value, max) / max);
+        return `<div class="hbar"><span class="hbar-label">${escapeHtml(item.label)}</span><span class="hbar-track"><i style="width:${width}%;background:${item.color}"></i></span><span class="hbar-val">${escapeHtml(item.text || String(item.value))}</span></div>`;
+      }).join("")}</div>`;
+    }
+    function barChart(items, scale) {
+      const w = 420, h = 188, top = 22, bottom = 36;
+      const max = scale > 0 ? scale : Math.max(...items.map(item => Number(item.value) || 0), 1);
+      const gap = 18, bw = (w - 36 - gap * items.length) / items.length;
+      const bars = items.map((item, index) => {
+        const value = Number(item.value) || 0;
+        const bh = (h - top - bottom) * Math.min(value, max) / max;
+        const x = 18 + index * (bw + gap);
+        const y = h - bottom - bh;
+        const shown = Math.max(bh, value > 0 ? 4 : 0);
+        return `<rect x="${x}" y="${h - bottom - shown}" width="${bw}" height="${shown}" rx="7" fill="${item.color}"/>
+          <text x="${x + bw / 2}" y="${Math.max(y - 8, 16)}" text-anchor="middle" font-size="13" fill="currentColor">${escapeHtml(item.text || String(item.value))}</text>
+          <text x="${x + bw / 2}" y="${h - 12}" text-anchor="middle" font-size="13" fill="currentColor">${escapeHtml(item.label)}</text>`;
+      }).join("");
+      return `<div class="chart chart-bars"><svg viewBox="0 0 ${w} ${h}">${bars}</svg></div>`;
+    }
+    function renderOverview(data) {
+      document.getElementById("overview-sub").textContent = `${data.hostname} · ${data.time} · 已运行 ${duration(data.uptime)} · 折线保留最近 ${data.history.length} 次采样`;
+      const mem = data.memory;
+      const memPct = mem.total ? Math.round(mem.used / mem.total * 100) : 0;
+      const history = data.history || [];
+      const cpuNow = data.cpuPercent == null ? "—" : data.cpuPercent + "%";
+      const memParts = [
+        {label: `已用 ${bytes(mem.used)}`, value: mem.used, color: palette[1]},
+        {label: `可用 ${bytes(mem.available)}`, value: mem.available, color: palette[2]}
+      ];
+      if (mem.swapTotal) memParts.push({label: `交换已用 ${bytes(mem.swapUsed)}`, value: mem.swapUsed, color: palette[3]});
+      document.getElementById("overview").innerHTML = `
+        <article class="panel"><h2>处理器占用</h2><div class="metric">${cpuNow}</div><div class="muted">${escapeHtml(data.cpuModel)} · ${data.cpuCount} 核</div>
+          ${lineChart([{name:"cpu", color:palette[0], values: seriesOf(history, "cpu")}], 100)}
+          ${legend([{label:"占用 %", color:palette[0]}])}</article>
+        <article class="panel"><h2>占用最高的程序</h2>
+          ${(data.processes || []).length ? hbars(data.processes.map((item, index) => ({label: item.name, value: item.cpu, max: 100, text: "处理器 " + item.cpu + "% · 内存 " + bytes(item.memory), color: palette[index % palette.length]}))) : `<div class="muted">暂时读不到进程。</div>`}
+          <div class="muted">这里是具体程序，按处理器占用从高到低排。条的满格是一个核心的 100%。</div></article>
+        <article class="panel"><h2>内存扇形图</h2>${donut(memParts, memPct + "%")}${legend(memParts)}</article>
+        <article class="panel"><h2>硬盘温度</h2>
+          ${data.temperatures.length ? `<div class="temp-row">${data.temperatures.map((item, index) => tempGauge(item, palette[index % palette.length])).join("")}</div>` : `<div class="muted">没有温度传感器。</div>`}</article>
+        <article class="panel span-2"><h2>磁盘占用</h2>
+          ${diskCharts(data.disks)}</article>
+        <article class="panel"><h2>网络流量折线</h2>
+          ${lineChart([{name:"rx", color:palette[2], values: seriesOf(history, "rx")}, {name:"tx", color:palette[3], values: seriesOf(history, "tx")}])}
+          ${legend([{label:"下行", color:palette[2]},{label:"上行", color:palette[3]}])}</article>
+        <article class="panel"><h2>网卡当前速率</h2>
+          ${hbars(data.network.flatMap(item => [{label: item.name + " 下行", value: item.rxRate || 0, text: rate(item.rxRate), color: palette[2]}, {label: item.name + " 上行", value: item.txRate || 0, text: rate(item.txRate), color: palette[3]}]))}</article>`;
+    }
+    async function loadOverview() {
+      renderOverview(await api("/api/overview"));
+    }
+
+    function renderApps() {
+      const shown = apps.filter(app => filter === "all" || (filter === "running" ? app.state === "running" : app.state !== "running"));
+      const grid = document.getElementById("grid");
+      grid.innerHTML = shown.map(app => {
+        const label = stateLabels[app.state] || app.state;
+        const bits = [app.port ? "端口 " + app.port : "", app.pid ? "PID " + app.pid : "", app.memory || ""].filter(Boolean);
+        const runningNow = app.state === "running" || app.state === "starting";
+        const stopped = ["stopped","failed","exited"].includes(app.state);
+        return `<article class="card" data-id="${escapeHtml(app.id)}">
+          <div class="card-head"><div class="icon ${app.icon || brandIcons[app.id] ? "brand" : ""}">${iconHtml(app)}</div>
+            <div><div class="card-top"><h2>${escapeHtml(app.name)}</h2><span class="status ${escapeHtml(app.state)}"><i class="dot"></i>${escapeHtml(label)}</span></div>
+            <div class="desc">${escapeHtml(app.description)}</div><div class="desc">${escapeHtml(bits.join(" · ") || "—")}</div></div></div>
+          <div class="actions">
+            <button class="act" data-act="start" data-id="${escapeHtml(app.id)}" ${runningNow ? "disabled" : ""}>启动</button>
+            <button class="act" data-act="stop" data-id="${escapeHtml(app.id)}" ${stopped ? "disabled" : ""}>停止</button>
+            <button class="act" data-act="restart" data-id="${escapeHtml(app.id)}">重启</button>
+            <button class="log" data-act="logs" data-id="${escapeHtml(app.id)}">日志</button>
+          </div></article>`;
+      }).join("") || `<div class="muted">没有应用。</div>`;
+      if (detailId) fillDetail();
+    }
+    async function loadApps() {
+      const data = await api("/api/apps");
+      apps = data.apps || [];
+      renderApps();
+    }
+    function fact(label, value) { return `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value || "—")}</dd>`; }
+    function fillDetail() {
+      const app = apps.find(item => item.id === detailId);
+      if (!app) return;
+      const label = stateLabels[app.state] || app.state;
+      const links = (app.links || []).map(link => {
+        const href = hostHref(link.href);
+        return `<a class="link" href="${escapeHtml(href)}" target="_blank" rel="noopener">${escapeHtml(link.label)} · ${escapeHtml(href)}</a>`;
+      }).join("");
+      document.getElementById("detail-title").textContent = app.name;
+      document.getElementById("detail-body").innerHTML = `<dl class="facts">${fact("页面", app.page)}${fact("状态", label)}${fact("服务", app.target)}${fact("进程", app.pid || "")}${fact("内存", app.memory)}${fact("启动", app.since)}${fact("重启", app.restarts)}${fact("端口", app.port || "")}</dl><div>${links}</div>${app.note ? `<p class="muted">${escapeHtml(app.note)}</p>` : ""}<div id="unit-full" class="muted">登录配置页后可看单元全文。</div>`;
+      if (authed && app.kind === "systemd") {
+        api(`/api/apps/${encodeURIComponent(app.id)}/definition`).then(data => {
+          const box = document.getElementById("unit-full");
+          if (box) box.outerHTML = `<pre>${escapeHtml(data.cat || data.note || "")}</pre>`;
+        }).catch(() => {});
+      }
+    }
+    function openDetail(id) { detailId = id; fillDetail(); document.getElementById("detail-mask").classList.add("open"); }
+    function closeDetail() { detailId = null; document.getElementById("detail-mask").classList.remove("open"); }
+
+    async function act(id, action, button) {
+      if (!authed) { openLogin(); return; }
+      button.disabled = true;
+      try {
+        const data = await api(`/api/apps/${encodeURIComponent(id)}/${action}`, {method:"POST", body:"{}"});
+        apps = data.apps || apps; renderApps();
+        const app = apps.find(item => item.id === id);
+        toast(`${app ? app.name : id} 已${action === "start" ? "启动" : action === "stop" ? "停止" : "重启"}`);
+      } catch (err) { toast(err.message); renderApps(); }
+    }
+    async function openLogs(id) {
+      logId = id;
+      const app = apps.find(item => item.id === id);
+      document.getElementById("log-title").textContent = (app ? app.name : id) + " 日志";
+      document.getElementById("log-body").textContent = "加载中…";
+      document.getElementById("mask").classList.add("open");
+      try {
+        const data = await api(`/api/apps/${encodeURIComponent(id)}/logs?lines=200`);
+        document.getElementById("log-body").textContent = data.logs || "暂无日志";
+      } catch (err) { document.getElementById("log-body").textContent = err.message; }
+    }
+    document.getElementById("grid").addEventListener("click", event => {
+      const button = event.target.closest("button");
+      if (button) {
+        event.stopPropagation();
+        if (button.dataset.act === "logs") openLogs(button.dataset.id);
+        else act(button.dataset.id, button.dataset.act, button);
+        return;
+      }
+      const card = event.target.closest(".card");
+      if (card) openDetail(card.dataset.id);
+    });
+    document.querySelector(".filters").addEventListener("click", event => {
+      const button = event.target.closest(".filter");
+      if (!button) return;
+      filter = button.dataset.filter;
+      document.querySelectorAll(".filter").forEach(item => item.classList.toggle("active", item === button));
+      renderApps();
+    });
+
+    function openLogin() { document.getElementById("login-mask").classList.add("open"); document.getElementById("login-password").focus(); }
+    function closeLogin() { document.getElementById("login-mask").classList.remove("open"); }
+    document.getElementById("login-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      try {
+        await api("/api/login", {method:"POST", body: JSON.stringify({password: document.getElementById("login-password").value})});
+        authed = true; closeLogin(); toast("已登录");
+        if (view === "config") renderConfig();
+        if (detailId) fillDetail();
+      } catch (err) { toast(err.message); }
+    });
+    document.getElementById("login-cancel").onclick = closeLogin;
+    document.getElementById("detail-close").onclick = closeDetail;
+    document.getElementById("detail-mask").onclick = event => { if (event.target.id === "detail-mask") closeDetail(); };
+    document.getElementById("log-close").onclick = () => { document.getElementById("mask").classList.remove("open"); logId = null; };
+    document.getElementById("log-refresh").onclick = () => { if (logId) openLogs(logId); };
+    document.getElementById("mask").onclick = event => { if (event.target.id === "mask") document.getElementById("log-close").click(); };
+
+    function renderConfig() {
+      const box = document.getElementById("config");
+      if (!authed) {
+        box.innerHTML = `<article class="panel"><h2>需要密码</h2><p class="muted">配置、导入、新建和启停都使用这一个密码。</p><div class="actions"><button class="act" id="go-login" type="button">登录</button></div></article>`;
+        document.getElementById("go-login").onclick = openLogin;
+        return;
+      }
+      const options = apps.map(app => `<option value="${escapeHtml(app.id)}">${escapeHtml(app.name)}</option>`).join("");
+      box.innerHTML = `<div class="stack">
+        <div class="cfg-board">
+          <article class="panel cfg-card">
+            <h2>导入已有服务</h2>
+            <p class="card-lead muted">从本机服务里选一个，登记成卡片。</p>
+            <div class="tool-row"><input id="unit-q" placeholder="搜索服务名，留空看本机单元"><button class="act" id="unit-search" type="button">搜索</button></div>
+            <div class="unit-list" id="unit-list"></div>
+          </article>
+          <article class="panel cfg-card">
+            <h2 id="unit-preview-title">单元全文</h2>
+            <p class="card-lead muted">核对内容后再导入。不复制程序和数据。</p>
+            <div class="tool-row"><span class="muted" id="unit-picked">尚未选择</span><div class="actions"><button class="act" id="unit-import" type="button">导入到面板</button></div></div>
+            <pre id="unit-preview">从左边选一个服务。</pre>
+          </article>
+          <article class="panel cfg-card"><h2>新建服务</h2>
+            <p class="card-lead muted">写入一个新的 systemd 服务，创建后不会自动启动。</p>
+            <div class="fields">
+              <div><label>服务名</label><input id="new-name" placeholder="例如 my-app"></div>
+              <div><label>说明</label><input id="new-desc"></div>
+              <div class="wide"><label>启动命令</label><input id="new-cmd" placeholder="/usr/bin/python3 /opt/app/app.py"></div>
+              <div><label>工作目录</label><input id="new-dir" placeholder="/opt/app"></div>
+              <div><label>运行用户</label><input id="new-user" placeholder="留空则 root"></div>
+            </div>
+            <div class="checks">
+              <label><input id="new-restart" type="checkbox" checked> 失败自动重启</label>
+              <label><input id="new-enable" type="checkbox"> 开机自启</label>
+            </div>
+            <div class="actions"><button class="act" id="new-create" type="button">创建</button></div>
+          </article>
+          <article class="panel cfg-card"><h2>修改卡片</h2>
+            <p class="card-lead muted">改的是面板上的卡片，不会改系统里的服务文件。</p>
+            <div class="fields">
+              <div class="wide"><label>选择卡片</label><select id="edit-id">${options}</select></div>
+              <div><label>名称</label><input id="edit-name"></div>
+              <div><label>说明</label><input id="edit-desc"></div>
+              <div><label>页面名</label><input id="edit-page"></div>
+              <div><label>端口</label><input id="edit-port"></div>
+              <div class="wide"><label>备注</label><textarea id="edit-note" rows="3"></textarea></div>
+              <div class="wide"><label>访问链接，一行一个：名称|地址</label><textarea id="edit-links" rows="3"></textarea></div>
+              <div class="wide"><label>自定义图标 PNG / SVG</label><input id="edit-icon" type="file" accept="image/png,image/svg+xml,.svg"></div>
+            </div>
+            <div class="actions"><button class="act" id="edit-save" type="button">保存</button><button class="log" id="edit-remove" type="button">从面板移除</button></div>
+          </article>
+        </div>
+        <article class="panel cfg-pass"><h2>密码</h2>
+          <div class="pass-line">
+            <div><label>原密码</label><input id="old-pass" type="password"></div>
+            <div><label>新密码</label><input id="new-pass" type="password"></div>
+            <div class="actions"><button class="act" id="pass-save" type="button">修改密码</button><button class="log" id="logout" type="button">退出</button></div>
+          </div>
+        </article>
+      </div>`;
+      fillEditor();
+      document.getElementById("edit-id").onchange = fillEditor;
+      document.getElementById("unit-search").onclick = searchUnits;
+      document.getElementById("unit-q").addEventListener("keydown", event => { if (event.key === "Enter") searchUnits(); });
+      document.getElementById("unit-import").onclick = importUnit;
+      document.getElementById("new-create").onclick = createService;
+      document.getElementById("edit-save").onclick = saveCard;
+      document.getElementById("edit-remove").onclick = removeCard;
+      document.getElementById("pass-save").onclick = changePassword;
+      document.getElementById("logout").onclick = async () => { await api("/api/logout", {method:"POST", body:"{}"}); authed = false; renderConfig(); toast("已退出"); };
+      searchUnits();
+    }
+    function fillEditor() {
+      const app = apps.find(item => item.id === document.getElementById("edit-id").value) || apps[0];
+      if (!app) return;
+      document.getElementById("edit-name").value = app.name || "";
+      document.getElementById("edit-desc").value = app.description || "";
+      document.getElementById("edit-page").value = app.page || "";
+      document.getElementById("edit-port").value = app.port || "";
+      document.getElementById("edit-note").value = app.note || "";
+      document.getElementById("edit-links").value = (app.links || []).map(link => `${link.label}|${link.href}`).join("\n");
+    }
+    async function searchUnits() {
+      const q = document.getElementById("unit-q").value || "";
+      const data = await api("/api/units?q=" + encodeURIComponent(q));
+      const list = document.getElementById("unit-list");
+      const stateText = {file: "本机", enabled: "已启用", disabled: "未启用", static: "静态", alias: "别名", indirect: "间接", generated: "生成", masked: "已屏蔽"};
+      list.innerHTML = (data.units || []).map(unit => `<button class="unit-row${unit.unit === previewUnitName ? " picked" : ""}" type="button" data-unit="${escapeHtml(unit.unit)}"><span>${escapeHtml(unit.unit)}</span><small>${escapeHtml(stateText[unit.state] || unit.state || "")}</small></button>`).join("") || `<div class="muted">没有匹配的服务。</div>`;
+      list.onclick = async event => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        previewUnitName = button.dataset.unit;
+        list.querySelectorAll(".unit-row").forEach(item => item.classList.toggle("picked", item === button));
+        document.getElementById("unit-preview-title").textContent = previewUnitName;
+        document.getElementById("unit-picked").textContent = previewUnitName;
+        document.getElementById("unit-preview").textContent = "正在读取…";
+        const full = await api(`/api/units/${encodeURIComponent(previewUnitName)}/full`);
+        document.getElementById("unit-preview").textContent = full.cat || "";
+      };
+    }
+    async function importUnit() {
+      if (!previewUnitName) { toast("先选一个服务"); return; }
+      const data = await api("/api/import", {method:"POST", body: JSON.stringify({unit: previewUnitName})});
+      apps = data.apps || apps;
+      toast(data.created ? "已导入" : "已更新这份服务的全文");
+      renderConfig();
+    }
+    async function createService() {
+      const data = await api("/api/services/create", {method:"POST", body: JSON.stringify({
+        name: document.getElementById("new-name").value,
+        description: document.getElementById("new-desc").value,
+        command: document.getElementById("new-cmd").value,
+        workdir: document.getElementById("new-dir").value,
+        user: document.getElementById("new-user").value,
+        restart: document.getElementById("new-restart").checked,
+        enable: document.getElementById("new-enable").checked
+      })});
+      apps = data.apps || apps;
+      toast("服务已创建，尚未启动");
+      renderConfig();
+    }
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("读不到这个图标文件"));
+        reader.onload = () => {
+          const text = String(reader.result || "");
+          const comma = text.indexOf(",");
+          resolve(comma >= 0 ? text.slice(comma + 1) : text);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    async function saveCard() {
+      const button = document.getElementById("edit-save");
+      button.disabled = true;
+      try {
+        const id = document.getElementById("edit-id").value;
+        const links = document.getElementById("edit-links").value.split("\n").map(line => {
+          const [label, ...rest] = line.split("|");
+          return {label: (label || "").trim(), href: rest.join("|").trim()};
+        }).filter(item => item.label && item.href);
+        await api(`/api/apps/${encodeURIComponent(id)}/meta`, {method:"POST", body: JSON.stringify({
+          name: document.getElementById("edit-name").value,
+          description: document.getElementById("edit-desc").value,
+          page: document.getElementById("edit-page").value,
+          note: document.getElementById("edit-note").value,
+          port: document.getElementById("edit-port").value,
+          links
+        })});
+        const file = document.getElementById("edit-icon").files[0];
+        if (file) {
+          const content = await fileToBase64(file);
+          await api(`/api/apps/${encodeURIComponent(id)}/icon`, {method:"POST", body: JSON.stringify({content})});
+        }
+        await loadApps();
+        toast(file ? "卡片和图标已保存" : "卡片已保存");
+        renderConfig();
+      } catch (err) {
+        toast(err.message);
+        if (button.isConnected) button.disabled = false;
+      }
+    }
+    async function removeCard() {
+      const id = document.getElementById("edit-id").value;
+      if (!confirm("只从面板移除这张卡片，不删除 systemd 服务本身。")) return;
+      const data = await api(`/api/apps/${encodeURIComponent(id)}/remove`, {method:"POST", body:"{}"});
+      apps = data.apps || [];
+      toast("已从面板移除");
+      renderConfig();
+    }
+    async function changePassword() {
+      await api("/api/password", {method:"POST", body: JSON.stringify({
+        old: document.getElementById("old-pass").value,
+        new: document.getElementById("new-pass").value
+      })});
+      toast("密码已修改");
+    }
+
+    api("/api/session").then(data => { authed = !!data.authed; }).catch(() => {});
+    loadOverview().catch(err => toast(err.message));
+    loadApps().catch(() => {});
+    setInterval(() => {
+      if (view === "overview") loadOverview().catch(() => {});
+      if (view === "services") loadApps().catch(() => {});
+    }, 5000);
+  </script>
+</body>
+</html>

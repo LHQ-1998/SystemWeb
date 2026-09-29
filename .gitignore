@@ -1,0 +1,5 @@
+auth.json
+initial-password
+__pycache__/
+*.pyc
+services/
